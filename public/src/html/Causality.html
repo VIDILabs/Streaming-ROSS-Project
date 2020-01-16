@@ -1,0 +1,11 @@
+<v-card flex fill-height id="correlation-view">
+    <!-- <v-layout row wrap class='panel'> -->
+        <v-chip id="chip-container" class="chip"> {{ message }} </v-chip>
+        <b-container fluid fill-height id="correlation-table" class="table-container">
+            <b-table v-if="selectedCausality == 'to'" :sort-by.sync="sortBy" :sort-desc.sync="sortDesc"
+                :items="to_items" :fields="fields" :responsive="responsive" />
+            <b-table v-if="selectedCausality == 'from'" :sort-by.sync="sortBy" :sort-desc.sync="sortDesc"
+                :items="from_items" :fields="fields" :responsive="responsive" />
+        </b-container>
+    <!-- </v-layout> -->
+</v-card>
