@@ -2,7 +2,7 @@
 
 Visual analytics framework for exploring and analyzing performance data from the ROSS PDES engine.
 
-See [interface demo](demo.mp4). 
+See [interface demo](https://youtu.be/pxthZSJ1jqs). 
 
 # Requirements
 Follow the installation instructions for the listed algorithms from [mv-streaming-algorithms](https://github.com/VIDILabs/mv-streaming-algorithms).
