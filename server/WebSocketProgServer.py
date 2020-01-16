@@ -39,12 +39,12 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             if self.stream_count == 0: 
                 self.stream_data = StreamDataAnalytics(stream, self.granularity, self.cluster_metric, self.calc_metrics, self.causality_metrics, self.communication_metrics, self.time_domain, metric)
                 self.stream_objs[metric] = self.stream_data
-                ret[metric] = self.stream_data.format()
+                ret[metric] = self.stream_data.schema()
                 ret['data'] = [{}, {}]
             elif self.stream_count < 2: 
                 stream_obj = self.stream_objs[metric]
                 self.stream_data = stream_obj.update(stream)
-                ret[metric] = self.stream_data.format()
+                ret[metric] = self.stream_data.schema()
                 ret['data'] = stream_obj.comm_data_base(None)
             else:
                 stream_obj = self.stream_objs[metric]
@@ -52,7 +52,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
                     self.stream_data = stream_obj.update(stream)
                 else:
                     self.stream_data = stream_obj.deupdate(stream)
-                ret[metric] = stream_obj.run_methods(self.stream_data, self.algo)
+                ret[metric] = stream_obj.run(self.stream_data, self.algo)
                 ret['data'] = stream_obj.comm_data_base(None)
         return ret 
     
@@ -76,7 +76,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         # Kinds of request methods that can be queried in the server
         if('method' in req and req['method'] in ['stream', 'get', 'set', 'get-count', 'pre-calc', 'comm-data-interval']):
             self.method = req['method']
-        
+    
         # Granuality selected by the user. 
         if('granularity' in req and req['granularity'] in ['Peid', 'KpGid', 'Lpid', 'Kpid']):
             self.granularity = req['granularity']
@@ -205,7 +205,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         if(self.method == 'set' and self.request == 0):
             WebSocketHandler.params = req['params']
             self.write_message({'status': 'ok'})
-            # print(WebSocketHandler.params)
 
         if(self.socket_request == 'comm-data-interval'):
             if('interval' in req):
@@ -228,7 +227,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             msg['cpd_comm'] = self.stream_objs[self.cluster_metric].comm_data_base(req['cpd'])
 
         self.write_message(msg)
-
 
     def on_close(self):
         print('connection closed')
