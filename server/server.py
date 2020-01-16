@@ -22,7 +22,7 @@ from ross_vis.Analytics import Analytics
 
 import os
 
-PROGRESSIVE_MODE = False
+PROGRESSIVE_MODE = True
 
 if 'PYTHONPATH' in os.environ and 'hpc-vast' in os.environ['PYTHONPATH']:
     from WebSocketProgServer import WebSocketHandler

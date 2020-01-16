@@ -68,8 +68,8 @@ export default {
 		selectedCausality: 'from',
 		drawBrush: true,
 		dialog: true,
-		config: ['8-16-100', '8-16-500', '8-16-1000'],
-		selectedConfig: '8-16-100',
+		config: ['8-16-1000'],
+		selectedConfig: '8-16-1000',
 		topology: ['DragonFly', 'Slim-Fly', 'Fat-Tree'],
 		selectedTopology: 'DragonFly',
 		nameRevMapper: {
