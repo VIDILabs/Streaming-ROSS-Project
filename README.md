@@ -1,6 +1,8 @@
-# A Visual Analytics Framework for Reviewing Streaming Performance Data. - Web interface
+# Web interface for "A Visual Analytics Framework for Reviewing Streaming Performance Data".
 
 Visual analytics framework for exploring and analyzing performance data from the ROSS PDES engine.
+
+See interface [demo](demo.mp4) for understanding how to use and interactions. 
 
 # Requirements
 Server backend requires Python version >= 3.6.

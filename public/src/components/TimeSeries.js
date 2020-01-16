@@ -1,12 +1,12 @@
 import * as d3 from 'd3'
 import "d3-selection-multi"
-import template from '../html/D3TimeSeries.html'
+import template from '../html/TimeSeries.html'
 import EventHandler from './EventHandler'
 
 // References: http://bl.ocks.org/ludwigschubert/0236fa8594c4b02711b2606a8f95f605
 
 export default {
-    name: 'D3TimeSeries',
+    name: 'TimeSeries',
     template: template,
     props: ['ts', 'clustering', 'cpd'],
     data: () => ({

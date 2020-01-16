@@ -4,7 +4,6 @@ import Vue from 'vue'
 
 import TimeDimCorrPanel from './TimeDimCorrPanel'
 import CommKpMatrixPanel from './CommKpMatrixPanel'
-import Overview from './Overview'
 
 export default {
 	name: 'StreamBoard',
@@ -12,7 +11,6 @@ export default {
 	components: {
 		TimeDimCorrPanel,
 		CommKpMatrixPanel,
-		Overview
 	},
 	props: [
 		'plotMetric1',

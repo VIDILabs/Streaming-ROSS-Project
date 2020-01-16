@@ -61,10 +61,6 @@ export default {
 					count = 0
 				}
 
-				// if(metric == this.$store.selectedClusterMetric){
-				// 	continue
-				// }
-				// else{
 				if (data['from'][i]['causality'] == 1 && metric != this.$store.selectedClusterMetric && metric != 'NeventProcessed') {
 					data['from'][i]['_rowVariant'] = 'warning'
 
@@ -85,9 +81,6 @@ export default {
 						// data['from'][i]['metric'] = this.nameMapper[metric] + '(' + count + ')'
 						data['from'][i]['metric'] = this.nameMapper[metric]
 				}
-				// }
-
-
 			}
 
 			for (let i = 0; i < data['to'].length; i++) {
@@ -99,11 +92,6 @@ export default {
 					count = 0
 				}
 
-
-				// if(metric == this.$store.selectedClusterMetric){
-				// 	continue
-				// }
-				// else{
 				if (data['to'][i]['causality'] == 1 && metric != this.$store.selectedClusterMetric) {
 					data['to'][i]['_rowVariant'] = 'warning'
 
@@ -123,9 +111,6 @@ export default {
 						// data['to'][i]['metric'] = this.nameMapper[metric] + '(' + count + ')'
 						data['to'][i]['metric'] = this.nameMapper[metric]
 				}
-				// }
-
-
 			}
 			return data
 		},

@@ -11,30 +11,14 @@
 			<v-btn outline fab small color="white" v-if="play == 1" v-on:click="updatePause">
 				<v-icon>pause</v-icon>
 			</v-btn>
-			<!-- <v-btn outline fab small color="white" v-if="play == 0" v-on:click="updatePrevStep">
-					<v-icon>skip_next</v-icon>
-				</v-btn> -->
-
 		</v-flex>
-		<!-- <v-flex xs2 class="ma-2">
-			<v-switch v-model="drawBrush" :label="`Brush`"
-			  ></v-switch>
-		</v-flex> -->
-
 		<v-spacer></v-spacer>
-		<!-- <v-flex xs2>
-			<v-select label="Analysis Mode" :items="modes" v-model="selectedMode" box :menu-props="{ maxHeight: '400' }"
-				v-on:change="updateMode()"></v-select>
-		</v-flex> -->
-
 	</v-toolbar>
 
 	<v-navigation-drawer v-model="left" temporary fixed>
 		<v-btn slot="activator" color="primary" dark>Open Dialog</v-btn>
 		<v-card flex id="control-panel">
 			<v-layout row wrap>
-				<!-- <v-switch :label="`Aggr`" v-model="isAggregated" v-on:change="visualize()"></v-switch> -->
-				<!-- <v-switch label="Intra-Comm" v-model="showIntraComm" v-on:change="visualize()"></v-switch> -->
 				<v-btn icon>
 					<v-icon v-on:click="reset()">refresh</v-icon>
 				</v-btn>
@@ -73,10 +57,6 @@
 						:menu-props="{ maxHeight: '400' }" v-on:change="updateGranularity()">
 					</v-select>
 				</v-flex>
-				<!-- <v-flex xs12 class="ma-1">
-                <v-slider v-model="commThreshold" :thumb-size="24" :min=0 v-on:input="updateLink" label="link threshold"></v-slider>
-                <span>{{thresholdValue}}</span>
-            </v-flex> -->
 			</v-layout>
 		</v-card>
 	</v-navigation-drawer>
@@ -131,13 +111,11 @@
 			v-bind:time-domain="selectedTimeDomain" v-bind:measure="selectedMeasure"
 			v-bind:cluster-metric="selectedClusterMetric" v-if="selectedMode == 'In Situ'"
 			v-bind:comm-data="commData" />
-		<!-- <HocBoard ref="HocBoard" v-bind:hoc-data="hocData" v-bind:plot-metric1="plotMetric1" -->
-			<!-- v-bind:plot-metric2="plotMetric2" v-if="selectedMode == 'Post Hoc'" /> -->
 
 	</v-content>
-	<!-- <v-footer color="blue-grey" class="white--text" app>
+	<v-footer color="blue-grey" class="white--text" app>
 		<span> VIDi Labs, University of California, Davis </span>
 		<v-spacer></v-spacer>
-		<span>&copy; 2018</span>
-	</v-footer> -->
+		<span>&copy; 2020</span>
+	</v-footer>
 </v-app>

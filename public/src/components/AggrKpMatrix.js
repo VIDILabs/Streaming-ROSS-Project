@@ -267,8 +267,8 @@ export default {
                     .text((d, i) => i)
         },
 
+        // Update the colors on the existing matrices. 
         update(max_weight) {
-            // Update the colors on the existing matrices. 
             max_weight = Math.max(max_weight, this.$parent.maxComm)
             for (let i = 0; i < this.idx; i += 1) {
                 console.log("Updating matrix: ", max_weight)

@@ -1,6 +1,6 @@
 import * as d3 from 'd3'
 import { lasso } from './lasso';
-import template from '../html/D3Dimensionality.html'
+import template from '../html/Dimensionality.html'
 
 export default {
     name: 'D3Dimensionality',

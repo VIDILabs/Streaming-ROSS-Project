@@ -2,8 +2,8 @@ import template from '../html/TimeDimCorrPanel.html'
 import p4 from 'p4.js'
 
 // import D3TimeSeries from './D3TimeSeries'
-import D3TimeSeries from './D3TimeSeriesWithSummary'
-import D3Dimensionality from './D3Dimensionality'
+import TimeSeries from './TimeSeries'
+import Dimensionality from './Dimensionality'
 import LiveKpMatrix from './LiveKpMatrix'
 import Causality from './Causality'
 import adjacencyMatrixLayout from './d3-adjacency-matrix-layout'
@@ -27,8 +27,8 @@ export default {
 	],
 	template: template,
 	components: {
-		D3Dimensionality,
-		D3TimeSeries,
+		Dimensionality,
+		TimeSeries,
 		Causality,
 		LiveKpMatrix,
 	},
@@ -45,7 +45,6 @@ export default {
 		timeCluster: {},
 		PCACluster: {},
 		selectedIds: [],
-		useD3: true,
 		addBrushTime: [],
 		kpMatrix: [],
 		clusterIds: [],
@@ -53,12 +52,7 @@ export default {
 	}),
 	watch: {
 		selectedIds: function (val) {
-			if (this.useD3) {
-				this.$refs.D3TimeSeries.selectedIds = val
-			}
-			else {
-				this.$refs.TimeSeries.selectedIds = val
-			}
+			this.$refs.TimeSeries.selectedIds = val
 		},
 		addBrushTime: function (val) {
 			this.$parent.newCommPanel = true
@@ -82,29 +76,17 @@ export default {
 			console.log('Time-Dimensionality Panel [init]', this.plotMetric)
 
 			if (this.panelId == '1') {
-				if (this.useD3) {
-					this.$refs.D3TimeSeries.showMessage = true
-					this.$refs.D3Dimensionality.showMessage = true
-					this.$refs.D3TimeSeries.init()
-					this.$refs.D3Dimensionality.init()
-				}
-				else {
-					this.$refs.TimeSeries.init()
-					this.$refs.Dimensionality.init()
-				}
+				this.$refs.TimeSeries.showMessage = true
+				this.$refs.Dimensionality.showMessage = true
+				this.$refs.TimeSeries.init()
+				this.$refs.Dimensionality.init()
 				this.$refs.Causality.init()
 			}
 			else if (this.panelId == '2') {
-				if (this.useD3) {
-					this.$refs.D3TimeSeries.showMessage = false
-					this.$refs.D3Dimensionality.showMessage = false
-					this.$refs.D3TimeSeries.init()
-					this.$refs.D3Dimensionality.init()
-				}
-				else {
-					this.$refs.TimeSeries.init()
-					this.$refs.Dimensionality.init()
-				}
+				this.$refs.TimeSeries.showMessage = false
+				this.$refs.Dimensionality.showMessage = false
+				this.$refs.TimeSeries.init()
+				this.$refs.Dimensionality.init()
 				this.$refs.LiveKpMatrix.init()
 			}
 		},
@@ -247,7 +229,7 @@ export default {
 		},
 
 		// Convert the cstore to format { 'id': [Array] }
-		processD3TimeSeries(cstore, mapBy) {
+		processTimeSeries(cstore, mapBy) {
 			let ret = {}
 
 			let cstore_id = {}
@@ -277,9 +259,8 @@ export default {
 			return ret
 		},
 
+		// Parsing code for the Live KpMatrix view.
 		processLiveKpMatrix() {
-
-			// Parsing code for the KpGrid view.
 			this.data = this.commData['data']
 			this.kpData = this.commData['kp_comm']
 			this.peData = this.commData['pe_comm']
@@ -298,21 +279,18 @@ export default {
 						}
 						let pe_x_index = Math.floor(id / this.kpCount)
 						let pe_y_index = Math.floor(i / this.kpCount)
-						// console.log(pe_x_index, pe_y_index)
+
 						let pe_z = this.peData[pe_x_index][pe_y_index]
 
 						let kpCommData = this.data[id]['CommData']
-						// let index = id * this.kp_count + i
+
 						let index = i
 						this.kpMatrix[id][i] = {
 							z: kpCommData[i],
 							pe_z: pe_z,
-							// id: this.$store.result[this.$store.selectedDragTimeRound].processIds[i],
 							kpid: this.data[index]['Kpid'],
 							kpgid: this.data[index]['KpGid'],
 							peid: this.data[index]['Peid'],
-							// cluster: this.$store.result[this.$store.selectedDragTimeRound].clusterIds[i],
-							// clusters: this.$store.result[this.$store.selectedDragTimeRound].clusterIds,
 							maxComm: this.maxComm,
 							minComm: this.minComm
 						}
@@ -321,10 +299,10 @@ export default {
 			}
 
 			this.adjacencyMatrix = adjacencyMatrixLayout()
-                .size([this.$store.matrixWidth, this.$store.matrixHeight])
-                .useadj(true)
-				.adj(this.kpMatrix)		
-				
+				.size([this.$store.matrixWidth, this.$store.matrixHeight])
+				.useadj(true)
+				.adj(this.kpMatrix)
+
 			this.adjMatrix = this.adjacencyMatrix()
 		},
 
@@ -349,29 +327,20 @@ export default {
 						let normal_result = this.processClusterData(result, 'normal')
 						let pca_result = this.processPCAData(result)
 						let macro_result = this.processClusterData(result, 'macro')
-						// let micro_result = this.processClusterData(result, 'micro')
 						this.causality_result = this.processCausalityData(data['result'])
-
-						// console.log(result)
 
 						this.cpd = result[0]['cpd']
 
 						this.normal_result = this.create_cstore(normal_result, this.timeAttribute)
 						this.pca_result = this.create_cstore(pca_result)
 						this.macro_result = this.create_cstore(macro_result, this.timeAttribute)
-						// this.micro_result = this.create_cstore(micro_result, this.timeAttribute)
 
-						if (this.useD3) {
-							this.normal_result = this.processD3TimeSeries(this.normal_result, 'id')
-							this.pca_result = this.processD3TimeSeries(this.pca_result, 'id')
-							// this.micro_result = this.processD3TimeSeries(this.micro_result, 'id')
-							// this.macro_result = this.processD3TimeSeries(this.macro_result, 'id')
-						}
+						this.normal_result = this.processTimeSeries(this.normal_result, 'id')
+						this.pca_result = this.processTimeSeries(this.pca_result, 'id')
 
 						this.processLiveKpMatrix()
 						this.processClusterIDs()
 						this.reset()
-						// this.checkClustering()
 					}
 					let currentSample = result[0]['normal_times'][result[0]['normal_times'].length - 1]
 					let currentSample_round = Math.floor(currentSample)
@@ -403,91 +372,44 @@ export default {
 			}
 		},
 
-
-
-		checkClustering() {
-			for (let KpGid in this.timeCluster) {
-				if (this.timeCluster.hasOwnProperty(KpGid)) {
-					if (this.timeCluster[KpGid] == this.PCACluster[KpGid]
-					) {
-						console.log("Matches")
-					}
-					else {
-						console.log("Bug")
-					}
-				}
-			}
-		},
-
 		clear() {
-			if (this.useD3) {
-				this.$refs.D3TimeSeries.reset(this.normal_result, this.cpd)
-				this.$refs.D3Dimensionality.reset(this.pca_result)
-			}
-			else {
-				this.$refs.TimeSeries.reset(this.normal_result)
-				this.$refs.Dimensionality.reset(this.pca_result)
-			}
+			this.$refs.TimeSeries.reset(this.normal_result, this.cpd)
+			this.$refs.Dimensionality.reset(this.pca_result)
 			// this.$refs.Causality.clear(this.causality_result)
 		},
 
 		reset() {
-			this.$refs.D3TimeSeries.selectedMeasure = this.$parent.measure
-			this.$refs.D3TimeSeries.isAggregated = this.$parent.isAggregated
-			this.$refs.D3TimeSeries.selectedMetrics = this.plotMetric
-			this.$refs.D3TimeSeries.plotMetric = this.plotMetric
-			this.$refs.D3TimeSeries.selectedTimeDomain = this.timeDomain
-			this.$refs.D3TimeSeries.clusters = 'cluster'
-			this.$refs.D3TimeSeries.groupBy = 'id'
-			this.$refs.D3TimeSeries.timeAttribute = 'time'
-			this.$refs.D3TimeSeries.count = this.stream_count
+			this.$refs.TimeSeries.selectedMeasure = this.$parent.measure
+			this.$refs.TimeSeries.isAggregated = this.$parent.isAggregated
+			this.$refs.TimeSeries.selectedMetrics = this.plotMetric
+			this.$refs.TimeSeries.plotMetric = this.plotMetric
+			this.$refs.TimeSeries.selectedTimeDomain = this.timeDomain
+			this.$refs.TimeSeries.clusters = 'cluster'
+			this.$refs.TimeSeries.groupBy = 'id'
+			this.$refs.TimeSeries.timeAttribute = 'time'
+			this.$refs.TimeSeries.count = this.stream_count
 
 			if (!this.initVis) {
 				if (this.panelId == '1') {
-					if (this.useD3) {
-						this.$refs.D3TimeSeries.initVis(this.normal_result, this.cpd)
-						this.$refs.D3Dimensionality.initVis(this.pca_result)
-					}
-					else {
-						this.$refs.TimeSeries.initVis(this.normal_result)
-						this.$refs.Dimensionality.initVis(this.pca_result)
-					}
+					this.$refs.TimeSeries.initVis(this.normal_result, this.cpd)
+					this.$refs.Dimensionality.initVis(this.pca_result)
 					this.$refs.Causality.initVis(this.causality_result)
 				}
 				else if (this.panelId == '2') {
-					if (this.useD3) {
-						this.$refs.D3TimeSeries.initVis(this.normal_result, this.cpd)
-						this.$refs.D3Dimensionality.initVis(this.pca_result)
-					}
-					else {
-						this.$refs.TimeSeries.initVis(this.normal_result)
-						this.$refs.Dimensionality.initVis(this.pca_result)
-					}
-
+					this.$refs.TimeSeries.initVis(this.normal_result, this.cpd)
+					this.$refs.Dimensionality.initVis(this.pca_result)
 				}
 				this.initVis = true
 			}
 			else {
 				if (this.panelId == '1') {
-					if (this.useD3) {
-						this.$refs.D3TimeSeries.reset(this.normal_result, this.cpd)
-						this.$refs.D3Dimensionality.reset(this.pca_result)
-					}
-					else {
-						this.$refs.TimeSeries.reset(this.normal_result)
-						this.$refs.Dimensionality.reset(this.pca_result)
-					}
+					this.$refs.TimeSeries.reset(this.normal_result, this.cpd)
+					this.$refs.Dimensionality.reset(this.pca_result)
 					this.$refs.Causality.clear(this.causality_result)
 				}
 				else if (this.panelId == '2') {
-					if (this.useD3) {
-						this.$refs.D3TimeSeries.reset(this.normal_result, this.cpd)
-						this.$refs.D3Dimensionality.reset(this.pca_result)
-					}
-					else {
-						this.$refs.TimeSeries.reset(this.normal_result)
-						this.$refs.Dimensionality.reset(this.pca_result)
-					}
+					this.$refs.TimeSeries.reset(this.normal_result, this.cpd)
+					this.$refs.Dimensionality.reset(this.pca_result)
 					this.$refs.LiveKpMatrix.matrix = this.kpMatrix
 					this.$refs.LiveKpMatrix.clusterIds = this.clusterIds
 					this.$refs.LiveKpMatrix.visualize(0)
@@ -499,18 +421,10 @@ export default {
 		},
 
 		updateDimensionality() {
-			if (this.useD3) {
-				this.$refs.D3Dimensionality.selectedMetrics = this.plotMetric
-				this.$refs.D3Dimensionality.colorSet = this.colorSet
-				this.$refs.D3Dimensionality.colorBy = 'cluster'
-				this.$refs.D3Dimensionality.visualize()
-			}
-			else {
-				this.$refs.Dimensionality.selectedMetrics = this.plotMetric
-				this.$refs.Dimensionality.colorSet = this.$store.colorset
-				this.$refs.Dimensionality.colorBy = 'cluster'
-				this.$refs.Dimensionality.visualize()
-			}
+			this.$refs.Dimensionality.selectedMetrics = this.plotMetric
+			this.$refs.Dimensionality.colorSet = this.colorSet
+			this.$refs.Dimensionality.colorBy = 'cluster'
+			this.$refs.Dimensionality.visualize()
 		},
 
 
@@ -536,10 +450,10 @@ export default {
 				}
 			}
 
-			if (!this.useD3) {
-				this.updateTimeSeries(callback)
-				this.updateDimensionality()
-			}
+			// if (!this.useD3) {
+			// 	this.updateTimeSeries(callback)
+			// 	this.updateDimensionality()
+			// }
 		}
 	}
 }
