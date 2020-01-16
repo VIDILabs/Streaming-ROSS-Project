@@ -1,5 +1,5 @@
 import template from '../html/TimeDimCorrPanel.html'
-import p4 from 'p4'
+import p4 from 'p4.js'
 
 // import D3TimeSeries from './D3TimeSeries'
 import D3TimeSeries from './D3TimeSeriesWithSummary'
