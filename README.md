@@ -51,3 +51,9 @@ After the server is started with HTTP port = 8888, use a web browser to access t
 ```
 http://localhost:8888
 ```
+
+******
+How to Cite
+-----
+Please, cite:    
+Suraj P. Kesavan, Takanori Fujiwara, Jianping Kelvin Li, Caitlin Ross, Misbah Mubarak, Christopher D. Carothers, Robert B. Ross, and Kwan-Liu Ma. "A Visual Analytics Framework for Reviewing Streaming Performance Data." In Proceedings of IEEE Pacific Visualization Symposium (PacificVis), forthcoming
