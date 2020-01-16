@@ -3,8 +3,14 @@
 Visual analytics framework for exploring and analyzing performance data from the ROSS PDES engine.
 
 # Requirements
-Server backend requires Python version >= 3.6
-Follow the installation instructions for the required algorithms from [mv-streaming-algorithms](https://github.com/VIDILabs/mv-streaming-algorithms).
+Server backend requires Python version >= 3.6.
+
+Follow the installation instructions for the listed algorithms from [mv-streaming-algorithms](https://github.com/VIDILabs/mv-streaming-algorithms).
+
+* [Progressive causality](https://github.com/VIDILabs/mv-streaming-algorithms/tree/master/causality/prog_causality)
+* [Progressive K-means clustering](https://github.com/VIDILabs/mv-streaming-algorithms/tree/master/clustering/prog_kmeans)
+* [Incremental PCA-based change point detection](https://github.com/VIDILabs/mv-streaming-algorithms/tree/master/cpd/ipca_aff_cpd)
+* [Progressive Incremental PCA](https://github.com/VIDILabs/mv-streaming-algorithms/tree/master/cpd/ipca_aff_cpd)
 
 Note: Virtualenv is recommended for running the server backend: 
 
