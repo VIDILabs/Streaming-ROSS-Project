@@ -50,7 +50,7 @@ npm install
 npm run dev
 ```
 
-After the server is started with HTTP port = 8888, use a web browser to access the ROSS-Vis app at http://localhost:8888.
+After the server is started with HTTP port = 8888, use a web browser to access the ROSS-Vis app at http://localhost:8080.
 
 ******
 How to Cite

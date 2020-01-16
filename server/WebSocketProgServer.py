@@ -3,40 +3,14 @@ import json
 import tornado.websocket
 import time
 import base64
+import pandas as pd
+import logging
 
 from ross_vis.DataModel import RossData
 from ross_vis.DataCache import RossDataCache
 from ross_vis.Transform import flatten, flatten_list
-from ross_vis.ProgAnalytics import StreamData
+from ross_vis.StreamAnalysis import StreamDataAnalytics
 
-""" 
-Parallelism wont work because there is no memory sharing. 
-def processWorker(stream_count, algo, time_domain, granularity, stream, metric):
-    if stream_count == 0:  
-        cpd = CPD()
-        pca = PCA()
-        causal = Causal()
-        clustering = Clustering()
-        prop_data = {}
-    else: 
-        prop_data = stream_data.update(stream)
-        cpd_result = cpd.tick(stream_data, algo.cpd)
-        pca_result = pca.tick(stream_data, algo.pca)
-        clustering_result = clustering.tick(stream_data)
-        #causal.tick(stream_data, algo.causality)
-        msg = {
-            '_data': prop_data,
-            'cpd' : cpd_result,
-            'pca': pca_result,
-            'clustering': clustering_result,
-        }
-        return msg  
-
-pool = multiprocessing.Pool()  
-stream_data = StreamData(stream, self.granularity, self.time_domain)
-func = partial(process, stream_data, self.data_count, self.algo, self.time_domain, self.granularity, stream)
-msg = pool.map(func, self.metric)
- """
 class WebSocketHandler(tornado.websocket.WebSocketHandler):
     waiters = set()
     cache = RossDataCache()
@@ -44,52 +18,8 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
     KpData = []
     params = None
 
-    def runOnServer(self):
-        stream_objs = {}
-        def process(stream, stream_count):
-            metric = ['RbSec']
-            granularity = 'KpGid'
-            time_domain = 'LastGvt'
-            algo = {
-                'cpd': 'aff',
-                'pca': 'prog_inc',
-                'causality': 'var',
-                'clustering': 'evostream',
-            }  
-            ret = {}          
-            for idx, metric in enumerate(metric):
-                print('Calculating results for {0}'.format(metric))
-                if stream_count == 0: 
-                    stream_data = StreamData(stream, granularity, metric, time_domain)
-                    stream_objs[metric] = stream_data
-                    ret[metric] = stream_data.format()
-                    ret['data'] = [{}, {}]
-                elif stream_count < 2: 
-                    stream_obj = stream_objs[metric]
-                    stream_data = stream_obj.update(stream)
-                    ret[metric] = stream_data.format()
-                    ret['data'] = stream_obj.comm_data_base()
-                else:
-                    stream_obj = stream_objs[metric]
-                    stream_data = stream_obj.update(stream)
-                    ret[metric] = stream_obj.run_methods(stream_data, algo)
-                    ret['data'] = stream_obj.comm_data_base()
-                print(ret['data'])
-            return ret 
-
-        data_attribute = 'KpData'
-        max_stream_count = 100
-        for stream_count in range(0, max_stream_count):
-            rd = RossData([data_attribute])
-            sample = WebSocketProgHandler.cache.data[stream_count]
-            stream = flatten(rd.fetch(sample))
-            res = process(stream, stream_count)
-
     def open(self):
-        # self.data_attribute = 'PeData'
         self.method = 'get' 
-        # self.granularity = 'Peid'
-        # self.metric = ['NeventProcessed']
         self.algo = {
             'cpd': 'aff',
             'pca': 'prog_inc',
@@ -107,7 +37,7 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
         for idx, metric in enumerate(self.calc_metrics):
             print('Calculating results for {0}'.format(metric))
             if self.stream_count == 0: 
-                self.stream_data = StreamData(stream, self.granularity, self.cluster_metric, self.calc_metrics, self.causality_metrics, self.communication_metrics, self.time_domain, metric)
+                self.stream_data = StreamDataAnalytics(stream, self.granularity, self.cluster_metric, self.calc_metrics, self.causality_metrics, self.communication_metrics, self.time_domain, metric)
                 self.stream_objs[metric] = self.stream_data
                 ret[metric] = self.stream_data.format()
                 ret['data'] = [{}, {}]
@@ -296,14 +226,6 @@ class WebSocketHandler(tornado.websocket.WebSocketHandler):
             print(req)
             msg['views'] = 1
             msg['cpd_comm'] = self.stream_objs[self.cluster_metric].comm_data_base(req['cpd'])
-        
-        # if(self.socket_request == 'comm-data-live'):
-        #     msg = {}
-        #     if('current_time' in req):
-        #         self.current_time = req['current_time']
-        #     msg['views'] = 1
-        #     msg['current_comm'] = self.stream_objs[self.cluster_metric].comm_data_base(curr)
-        
 
         self.write_message(msg)
 

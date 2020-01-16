@@ -9,6 +9,7 @@ import os.path
 import uuid
 import struct
 import time
+import os
 import warnings
 
 from tornado.options import define, options
@@ -18,17 +19,8 @@ from tornado.iostream import StreamClosedError
 from ross_vis.DataModel import RossData
 from ross_vis.DataCache import RossDataCache
 from ross_vis.Transform import flatten, flatten_list
-from ross_vis.Analytics import Analytics
 
-import os
-
-PROGRESSIVE_MODE = True
-
-if 'PYTHONPATH' in os.environ and 'hpc-vast' in os.environ['PYTHONPATH']:
-    from WebSocketProgServer import WebSocketHandler
-    PROGRESSIVE_MODE = True
-else:
-    from WebSocketServer import WebSocketHandler
+from WebSocketProgServer import WebSocketHandler
 
 
 define("http", default=8888, help="run on the given port", type=int)
@@ -44,8 +36,8 @@ class Application(tornado.web.Application):
         handlers = [
             (r"/", MainHandler),
             (r'/app/(.*)', tornado.web.StaticFileHandler, {'path': appdir}),
-            (r"/data", AjaxGetJsonData),
-            (r"/analysis/(\w+)/(\w+)", AnalysisHandler),
+            # (r"/data", AjaxGetJsonData),
+            # (r"/analysis/(\w+)/(\w+)", AnalysisHandler),
             (r"/websocket", WebSocketHandler)
         ]
         settings = dict(
@@ -87,38 +79,6 @@ class StreamServer(TCPServer):
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")        
-        
-class AjaxGetJsonData(tornado.web.RequestHandler):
-    def get(self):
-        schema = {k:type(v).__name__ for k,v in data[0].items()}
-        self.write({
-            'data': WebSocketHandler.KpData,
-            'schema': schema
-        })
-
-class AnalysisHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "x-requested-with")
-        self.set_header('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-
-    def get(self, granularity, reduction):
-        metrics = self.get_arguments('metrics')
-        data = WebSocketHandler.cache.export_dict('KpData')
-      
-        analysis = Analytics(data, excludes=['CommData'], index=['Peid', 'Kpid', 'RealTs', 'LastGvt', 'VirtualTs', 'KpGid', 'EventId'])
-        if granularity == 'PE':
-            analysis.groupby(['Peid'])
-        else:
-            analysis.groupby(['KpGid'])
-
-        analysis.pca(2)
-        result = analysis.dbscan().kmeans()      
-
-        self.write({
-            'data': result.data.to_dict('records'),
-            'schema':result.schema
-        })
 
 def main():
     tornado.options.parse_command_line()
@@ -126,11 +86,7 @@ def main():
     if (os.path.isfile(options.datafile)):
         WebSocketHandler.cache.loadfile(options.datafile)
 
-        if( PROGRESSIVE_MODE == False):
-            WebSocketHandler.KpData = WebSocketHandler.cache.export_dict('KpData')
-            print('[Post-Hoc mode] Loaded %d samples' % WebSocketHandler.cache.size())
-        else:
-            print('[Progressive mode] Loaded %d samples' % WebSocketHandler.cache.size())
+    print('[Progressive mode] Loaded %d samples' % WebSocketHandler.cache.size())
 
     app = Application(options.appdir)
     app.listen(options.http)
@@ -154,10 +110,6 @@ def main():
         for dir, _, files in os.walk(path):
             [tornado.autoreload.watch(path + '/' + f) for f in files if not f.startswith('.')]
     
-    # For running progressive in the server without sockets
-    if(PROGRESSIVE_MODE == True and options.algo == 'server'):
-        WebSocketHandler.runOnServer()
-
     tornado.ioloop.IOLoop.current().start()    
 
 

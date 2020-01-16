@@ -4,59 +4,18 @@ import time
 from collections import defaultdict
 
 # Change point detection methods
-from change_point_detection.ffstream.aff_cpp import AFF
-from change_point_detection.pca_stream_cpd import pca_stream_cpd_cpp
-from change_point_detection.pca_aff_cpd import pca_aff_cpd_cpp
+from ipca_aff_cpd import IPCAAFFCPD
 
 # PCA methods
-from ross_vis.prog_inc_pca import ProgIncPCA
-#from ross_vis.inc_pca import IncPCA
+from prog_inc_pca import ProgIncPCA
 
 # Clustering methods
-from ross_vis.prog_evo_stream import ProgEvoStream
-from ross_vis.prog_kmeans import ProgKMeans
+from prog_kmeans import ProgKMeans
 
 # Causality methods
-from ross_vis.causality import Causality
+from prog_causality import ProgCausality
 
-#from timer import Timer
-
-
-class PCAAFFCPD(pca_aff_cpd_cpp.PCAAFFCPD):
-    def __init__(self,
-                 alpha,
-                 eta=0.01,
-                 burn_in_length=10,
-                 inc_pca_forgetting_factor=1.0):
-        super().__init__(alpha, eta, burn_in_length, inc_pca_forgetting_factor)
-
-    def feed(self, new_time_point):
-        return super().feed(new_time_point)
-
-    def feed_with_pca_result_return(self, new_time_point):
-        return super().feed_with_pca_result_return(new_time_point)
-
-    def predict(self):
-        return super().predict()
-
-    def feed_predict(self, new_time_point):
-        return super().feed_predict(new_time_point)
-
-class PCAStreamCPD(pca_stream_cpd_cpp.PCAStreamCPD):
-    def __init__(self,
-                 win_size,
-                 theta_factor=0.0,
-                 divergence_metric="area",
-                 thres_total_ex_var_ratio=0.99,
-                 delta=0.005,
-                 bin_width_factor=2.0):
-        super().__init__(win_size, theta_factor, divergence_metric,
-                         thres_total_ex_var_ratio, delta, bin_width_factor)
-
-    def feed_predict(self, new_time_point):
-        return super().feed_predict(new_time_point)
-
-class StreamData:
+class StreamDataAnalytics:
     def __init__(self, data, granularity, cluster_metric, calc_metrics, causality_metrics, communication_metrics, time_domain, this_metric):
         self.count = 0
         self.granularity = granularity
@@ -95,8 +54,6 @@ class StreamData:
         self.results = pd.DataFrame(data=self.df[granularity].astype(np.float64).tolist(), columns=[granularity])
         self._time = self.metric_df.columns.get_level_values(1).tolist()
         self.granIDs = self.df[self.granularity]
-        #self.timer = Timer()
-
 
     def _format(self):
         # Convert metric_df to ts : { id1: [timeSeries], id2: [timeSeries] }    
@@ -560,13 +517,13 @@ class StreamData:
         self.results = pd.read_csv(str(filename) + str(self.cluster_metric) + '.csv')
         return self.format()
 
-class CPD(StreamData):
+class CPD(StreamDataAnalytics):
     # Perform Change point detection on Streaming data.
     def __init__(self):
         # Stores the change points recorded.
         self.cps = []
         self.alpha = 0.1
-        self.aff_obj = PCAAFFCPD(alpha=self.alpha)
+        self.aff_obj = IPCAAFFCPD(alpha=self.alpha)
 
     def format(self, result, count):
         cpd = [(result)]
@@ -582,40 +539,14 @@ class CPD(StreamData):
         if(self.count == 1):
             if(self.method == 'aff'):
                 result = self.aff()
-            elif(self.method == 'stream'):
-                result = self.stream()
         else:
             if(self.method == 'aff'):
                 result = self.aff_update()
-            elif(self.method == 'stream'):
-                result = self.stream_update()
         return self.format(result, self.count)
 
     def get_change_points(self):
         # Getter to return the change points.
         return self.cps
-
-    def stream(self):    
-        self.stream = PCAStreamCPD(win_size=5)
-        time_series = self.new_data_df.T.values
-        change = self.stream.feed_predict(new_time_point)
-        if change:
-            self.cps.append(0)
-            # print('Change', 0)
-            return 1
-        else:
-            return 0
-
-    def stream_update(self):
-        X = np.array(self.new_data_df)
-        Xt = X.transpose()
-        change = self.stream.feed_predict(Xt)
-        if(change):
-            self.cps.append(self.count)
-            # print('Change', self.count)
-            return 1
-        else:
-            return 0
 
     def aff(self):
         X = np.array(self.new_data_df)
@@ -631,7 +562,6 @@ class CPD(StreamData):
             return 0
             
     def aff_update(self):
-        print(self.count)
         X = np.array(self.new_data_df[self.current_time])
         Xt = X.transpose()
         change = self.aff_obj.feed_predict(Xt[0, :])
@@ -643,7 +573,7 @@ class CPD(StreamData):
             # print('No-change#######################', self.count)
             return 0
 
-class PCA(StreamData):
+class PCA(StreamDataAnalytics):
     def __init__(self):
         self.n_components = 2
         self.time_series = np.array([])
@@ -673,14 +603,10 @@ class PCA(StreamData):
         elif(self.count == 2):
             if(method == 'prog_inc'):
                 self.prog_inc()
-            elif(self.method == 'inc'):
-                self.inc()
             return self._format()
         else:
             if(self.method == 'prog_inc'):
                 self.prog_inc_update()
-            elif(self.method == 'inc'):
-                self.inc()
             return self._format()
             
     def prog_inc(self):
@@ -697,18 +623,8 @@ class PCA(StreamData):
         pca.progressive_fit(self.time_series, latency_limit_in_msec = 10)
         self.pcs_new = pca.transform(self.time_series)
         self.pcs_curr = ProgIncPCA.geom_trans(self.pcs_curr, self.pcs_new)
-        
-    def inc(self):
-        pca = IncPCA(2, 1.0)
-        pca.partial_fit(self.data)
-        pcs = pca.transform(self.data.values)
-        pca_result = pd.DataFrame(data = pcs, columns = ['PC%d'%x for x in range(0, self.n_components) ])
-        return pca_result
 
-    def inc_update(self):
-        pass
-
-class Clustering(StreamData):
+class Clustering(StreamDataAnalytics):
     def __init__(self):
         self.n_clusters = 3
         self.mutation_rate = 0.1
@@ -719,17 +635,6 @@ class Clustering(StreamData):
         self.labels_micro = np.array([])
         self.times_macro = np.array([])
         self.times_micro = np.array([])
-
-
-    # def format(self):
-    #     normal_result = pd.DataFrame.from_dict({'normal' : np.asmatrix(self.time_series).tolist(), 'normal_labels': self.labels }, orient='index')
-    #     micro_result = pd.DataFrame.from_dict({'micro' : np.asmatrix(self.time_series_micro).tolist(), 'micro_labels': self.labels_micro }, orient='index')
-    #     macro_result = pd.DataFrame.from_dict({'macro' : np.asmatrix(self.time_series_macro).tolist(), 'macro_labels': self.labels_macro }, orient='index')
-        
-    #     return({
-    #         'normal': normal_result,
-    #         'micro': micro_result,
-    #     })
 
     def _format(self):
         normal = [(self.time_series.tolist(), self.labels, self._time, self.granIDs.tolist())]
@@ -755,19 +660,8 @@ class Clustering(StreamData):
         self.granIDs = data.granIDs
         self.granularity = data.granularity
         self.count = data.count 
-        # self.time_series = np.zeros((1, self.metric_df.shape[0]))
 
-        if(self.algo == 'evostream'):
-            if(self.count < 2):
-                return {}
-            if(self.count == 2):
-                self.evostream()
-            elif(self.count > 2):
-                self.evostream_update()
-            self.macro()
-            self.micro()
-            return self._format()
-        elif(self.algo == 'kmeans'):
+        if(self.algo == 'kmeans'):
             if(self.count < 2):
                 return {}
             if(self.count == 2):
@@ -775,7 +669,6 @@ class Clustering(StreamData):
             elif(self.count > 2):
                 self.kmeans_update()
             self.kmeans_macro()
-            # self.micro()
             return self._kmeans_format()
 
     def emptyCurrentToPrev(self):
@@ -784,37 +677,10 @@ class Clustering(StreamData):
             ret[idx] = 0
         return ret
 
-    def evostream(self):
-        self.time_series = self.metric_df.values
-        self.evo = ProgEvoStream(n_clusters=self.n_clusters, mutation_rate=self.mutation_rate)
-        self.evo.progressive_fit(self.time_series, latency_limit_in_msec=self.fit_latency_limit_in_msec)
-        self.evo.progressive_refine_cluster(latency_limit_in_msec=self.refine_latency_limit_in_msec)
-        self.labels = self.evo.predict(self.time_series)
-        self.current_to_prev = self.emptyCurrentToPrev()
-        
-    def evostream_update(self):
-        new_time_series = self.new_data_df.values
-        self.time_series = np.append(self.time_series, new_time_series, 1)
-        self.evo.progressive_fit(self.time_series, latency_limit_in_msec=self.fit_latency_limit_in_msec, point_choice_method="random", verbose=True)
-        self.evo.progressive_refine_cluster(latency_limit_in_msec=self.refine_latency_limit_in_msec)
-        self.labels, self.current_to_prev = self.evo.consistent_labels(self.labels, self.evo.predict(self.time_series))
-
-    def macro(self):
-        self.time_series_macro = np.array(self.evo.get_macro_clusters())
-        self.labels_macro = [self.current_to_prev[i] for i in range(self.time_series_macro.shape[0])]
-        self.times_macro = np.array(self._time)
-
-    def micro(self):
-        self.time_series_micro = np.array(self.evo.get_micro_clusters())
-        self.lables_micro = self.evo.predict(self.time_series_micro)
-        self.labels_micro = [self.current_to_prev[i] for i in self.labels_micro]
-        self.times_micro = np.array(self._time)
-
     def kmeans(self):
         self.time_series = self.metric_df.values
         self.evo = ProgKMeans(n_clusters=self.n_clusters)
         self.evo.progressive_fit(self.time_series, latency_limit_in_msec=self.fit_latency_limit_in_msec)
-        # self.evo.progressive_refine_cluster(latency_limit_in_msec=self.refine_latency_limit_in_msec)
         self.labels = self.evo.predict(self.time_series).tolist()
         self.current_to_prev = self.emptyCurrentToPrev()
         
@@ -822,7 +688,6 @@ class Clustering(StreamData):
         new_time_series = self.new_data_df.values
         self.time_series = np.append(self.time_series, new_time_series, 1)
         self.evo.progressive_fit(self.time_series, latency_limit_in_msec=self.fit_latency_limit_in_msec, point_choice_method="fromPrevCluster", verbose=True)
-        # self.evo.progressive_refine_cluster(latency_limit_in_msec=self.refine_latency_limit_in_msec)
         self.labels, self.current_to_prev = self.evo.consistent_labels(self.labels, self.evo.predict(self.time_series))
 
     def kmeans_macro(self):
@@ -830,13 +695,7 @@ class Clustering(StreamData):
         self.labels_macro = [self.current_to_prev[i] for i in range(self.time_series_macro.shape[0])]
         self.times_macro = np.array(self._time)
 
-    # def micro(self):
-    #     self.time_series_micro = np.array(self.evo.get_micro_clusters())
-    #     self.lables_micro = self.evo.predict(self.time_series_micro)
-    #     self.labels_micro = [self.current_to_prev[i] for i in self.labels_micro]
-    #     self.times_micro = np.array(self._time)
-
-class Causal(StreamData):
+class Causal(StreamDataAnalytics):
     def __init__(self):
         self.pivot_table_results = {}
 
@@ -867,12 +726,6 @@ class Causal(StreamData):
         self.granularity = data.granularity
         self.causality_metrics = data.causality_metrics
         
-        # self.data_metrics = ['NetworkRecv', 'NetworkSend', 'NeventProcessed', 'NeventRb', 'RbSec', \
-        #  'RbTime', 'RbTotal', 'RbPrim']
-
-        # self.calc_metrics =  ['NetworkRecv', 'NetworkSend', 'NeventProcessed', 'NeventRb', 'RbSec', \
-        #  'RbTime', 'RbTotal', 'RbPrim']
-
         self.data_metrics = ['NetworkRecv', 'NetworkSend', 'NeventProcessed', 'RbSec', 'NeventRb', 'RbTotal', 'RbPrim', 'NetReadTime', 'FcAttempts', 'EventTies', 'EventProcTime']
         self.calc_metrics = ['NetworkRecv', 'NetworkSend', 'NeventProcessed', 'RbSec', 'NeventRb', 'RbTotal', 'RbPrim', 'NetReadTime', 'FcAttempts', 'EventTies', 'EventProcTime']
 
@@ -923,7 +776,7 @@ class Causal(StreamData):
         vd_to = pd.DataFrame(index=[0], columns=self.causality_metrics).fillna(0.0)
 
         if is_non_const_col.loc[self.cluster_metric]:
-            causality = Causality()
+            causality = ProgCausality()
             causality.adaptive_progresive_var_fit(
                 X, latency_limit_in_msec=100, point_choice_method="reverse")
 
@@ -936,20 +789,14 @@ class Causal(StreamData):
                 ir_to.loc[0, is_non_const_col] = tmp_ir_to[:, 1]
             except:
                 b = 1
-                # print(
-                    # "impulse reseponse was not excuted. probably matrix is not",
-                    # "positive definite")
-
+        
             try:
                 tmp_vd_from, tmp_vd_to = causality.variance_decomp(self.cluster_metric)
                 vd_from.loc[0, is_non_const_col] = tmp_vd_from[:, 1]
                 vd_to.loc[0, is_non_const_col] = tmp_vd_to[:, 1]
             except:
                 a = 1
-                # print(
-                    # "impulse reseponse was not excuted. probably matrix is not",
-                    #  "positive definite")
-
+        
         causality_from = causality_from
         causality_to = causality_to
         ir_from = ir_from.loc[0, :].tolist()
