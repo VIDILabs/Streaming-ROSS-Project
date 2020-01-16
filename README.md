@@ -52,11 +52,7 @@ npm run dev
 
 After the server is started with HTTP port=8888, open the client app at http://localhost:8080.
 
-******
-How to Cite
------
-Please, cite:
 
-~~~
+# Citation
+
 Suraj P. Kesavan, Takanori Fujiwara, Jianping Kelvin Li, Caitlin Ross, Misbah Mubarak, Christopher D. Carothers, Robert B. Ross, and Kwan-Liu Ma. "A Visual Analytics Framework for Reviewing Streaming Performance Data." In Proceedings of IEEE Pacific Visualization Symposium (PacificVis), forthcoming
-~~~
