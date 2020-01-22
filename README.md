@@ -37,7 +37,7 @@ The app server listens for HTTP and WebSocket requests on 8888 and receives data
  python server.py --http=8888 --datafile=./$DATA_SRC/$DATA_FILE.bin --appdir=../ross-vis/dist' 
 ```
 
-# App client server
+# App server
 
 ## Installation
 ``` bash
